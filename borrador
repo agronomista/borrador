@@ -1,0 +1,259 @@
+
+#LIBRERIAS NECESARIAS:
+library(pacman)
+p_load(sf,raster, rgdal,rgeos, wesanderson, sp, mapview, gstat,tidyverse, 
+        readxl,patchwork, ggplot2, paletteer)
+
+#CARGAR DATOS GIS
+poligono_crotons<-shapefile("E:\\Paquete de información_coopeindia\\Mapas de dispersión trips\\Interpolaciones_IDW\\Generador de mapas de distribución\\ArchivosGIS\\cortado_poligonoverfinal.shp")
+
+#CARGAR DATOS DE LOS MONITOREOS
+ruta_data <- "E:\\Paquete de información_coopeindia\\Mapas de dispersión trips\\Interpolaciones_IDW\\Generador de mapas de distribución\\Datos\\Diarios\\diarios.csv"
+data <- read.csv(ruta_data, header = T, sep = ",")
+
+#CARGAR MAPAS
+mapview()
+showMethods("mapView")
+
+#VER CAPA DEL POLIGONO EN LOS MAPAS
+mapview(poligono_crotons)
+
+#VER INFORMACION DE LA CAPA RASTER
+poligono_crotons
+
+#CREACION DELA GRILLA
+grid <-as.data.frame(spsample(poligono_crotons, "regular", n = 50000))
+names(grid) <- c("x", "y")
+
+#DEFINICION DE LAS COORDENADAS
+coordinates(grid) <- c("x", "y")
+gridded(grid) <- TRUE
+fullgrid(grid) <- TRUE
+proj4string(poligono_crotons) <-proj4string(poligono_crotons) 
+
+#DEFINICION DE LAS COORDENADAS Y OBSERVACION DE LA GRILLA CREADA
+crs(grid) <- crs(poligono_crotons)
+plot(grid) #observacion de la grilla
+
+#CREACION DE LA VARIABLE PARA ENLAZAR CON LA BASE DE DATOS
+pts <- data 
+
+#ENLACE CON LA BASE DE DATOS
+  #ESPECIFICAR EN EL SET DE DATOS LAS COORDENADAS
+coordinates(pts) <- ~ X..Longitud. + Y..Latitud. 
+crs(pts) <- crs(poligono_crotons)
+
+#ORDENAR LA REALIZACION DE LA INTERPOLACION
+idw.p_21_oct <- gstat::idw(X21_oct ~ 1, pts, grid)
+idw.p_21_oct <- raster(idw.p_21_oct) #realizar la interpolacion
+idw.p_21_oct <-raster::mask(idw.p_21_oct,poligono_crotons) #cortado de mascara 
+
+plot(idw.p_21_oct)
+
+
+idw.p_28_oct <- gstat::idw(X28_oct ~ 1, pts, grid)
+idw.p_28_oct <- raster(idw.p_28_oct) #realizar la interpolacion
+idw.p_28_oct <-raster::mask(idw.p_28_oct,poligono_crotons) #cortado de mascara 
+
+plot(idw.p_28_oct)
+
+idw.p_04_nov <- gstat::idw(X4_nov ~ 1, pts, grid)
+idw.p_04_nov  <- raster(idw.p_04_nov) #realizar la interpolacion
+idw.p_04_nov  <-raster::mask(idw.p_04_nov ,poligono_crotons) #cortado de mascara 
+
+plot(idw.p_04_nov)
+
+idw.p_11_nov <- gstat::idw(X11_nov ~ 1, pts, grid)
+idw.p_11_nov  <- raster(idw.p_11_nov) #realizar la interpolacion
+idw.p_11_nov  <-raster::mask(idw.p_11_nov ,poligono_crotons) #cortado de mascara 
+
+plot(idw.p_11_nov)
+
+idw.p_18_nov <- gstat::idw(X18_nov ~ 1, pts, grid)
+idw.p_18_nov  <- raster(idw.p_18_nov) #realizar la interpolacion
+idw.p_18_nov  <-raster::mask(idw.p_18_nov ,poligono_crotons) #cortado de mascara 
+
+plot(idw.p_18_nov)
+
+
+
+
+#21_Octubre
+oct21_mapa <- rasterToPoints(idw.p_21_oct, xy = TRUE) %>% as_tibble() %>% 
+  gather(var, value, -x, -y)
+    paleta <- paletteer_dynamic("cartography::orange.pal",20)
+
+    oct21_mapa <- ggplot() +
+        geom_raster(data = oct21_mapa, mapping = aes(
+          x = x, y = y, fill = value)) +
+          scale_fill_gradientn(colours = paleta, na.value = "white") + 
+            geom_sf(data = st_as_sf(poligono_crotons), fill = NA) + 
+              geom_sf(data = st_as_sf(pts), color = "yellow") +
+                geom_sf_text(data = st_as_sf(pts), aes(label = ID), size = 3, family = "Arial Black", vjust = -0.1, hjust = 0.3) +
+  
+              
+  
+              ggtitle("OCTUBRE 21") +
+                labs(x = "Longitud (º)", y = "Latitud (º)", fill = bquote("Trips") ) +
+                  theme_bw() + 
+                    theme(plot.title = element_text(hjust = 0.5),
+                          axis.text.y = element_text(colour = "black", size = 9),
+                          axis.text.x = element_text(colour = "black", size = 9),
+                          legend.title.align = 0.5, 
+                          legend.position = "top",
+                          strip.text.x  = element_text(size = 11),
+                          axis.title.y = element_text(size = 11),
+                          axis.title.x = element_text(size = 11))
+
+oct21_mapa
+
+#28_Octubre
+oct28_mapa <- rasterToPoints(idw.p_28_oct, xy = TRUE) %>% as_tibble() %>% 
+  gather(var, value, -x, -y)
+paleta <- paletteer_dynamic("cartography::orange.pal",20)
+
+oct28_mapa <- ggplot() +
+  geom_raster(data = oct28_mapa, mapping = aes(
+    x = x, y = y, fill = value)) +
+  scale_fill_gradientn(colours = paleta, na.value = "white") + 
+  geom_sf(data = st_as_sf(poligono_crotons), fill = NA) + 
+  geom_sf(data = st_as_sf(pts), color = "yellow") +
+  geom_sf_text(data = st_as_sf(pts), aes(label = ID), size = 3, family = "Arial Black", vjust = -0.1, hjust = 0.3) +
+  
+  
+  
+  ggtitle("OCTUBRE 28") +
+  labs(x = "Longitud (º)", y = "Latitud (º)", fill = bquote("Trips") ) +
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.y = element_text(colour = "black", size = 9),
+        axis.text.x = element_text(colour = "black", size = 9),
+        legend.title.align = 0.5, 
+        legend.position = "top",
+        strip.text.x  = element_text(size = 11),
+        axis.title.y = element_text(size = 11),
+        axis.title.x = element_text(size = 11))
+
+oct28_mapa
+
+#04_Noviembre
+nov04_mapa <- rasterToPoints(idw.p_04_nov, xy = TRUE) %>% as_tibble() %>% 
+  gather(var, value, -x, -y)
+paleta <- paletteer_dynamic("cartography::orange.pal",20)
+
+nov04_mapa <- ggplot() +
+  geom_raster(data = nov04_mapa, mapping = aes(
+    x = x, y = y, fill = value)) +
+  scale_fill_gradientn(colours = paleta, na.value = "white") + 
+  geom_sf(data = st_as_sf(poligono_crotons), fill = NA) + 
+  geom_sf(data = st_as_sf(pts), color = "yellow") +
+  geom_sf_text(data = st_as_sf(pts), aes(label = ID), size = 3, family = "Arial Black", vjust = -0.1, hjust = 0.3) +
+  
+  
+  
+  ggtitle("NOVIEMBRE 04") +
+  labs(x = "Longitud (º)", y = "Latitud (º)", fill = bquote("Trips") ) +
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.y = element_text(colour = "black", size = 9),
+        axis.text.x = element_text(colour = "black", size = 9),
+        legend.title.align = 0.5, 
+        legend.position = "top",
+        strip.text.x  = element_text(size = 11),
+        axis.title.y = element_text(size = 11),
+        axis.title.x = element_text(size = 11))
+
+nov04_mapa
+
+#04_Noviembre
+nov04_mapa <- rasterToPoints(idw.p_04_nov, xy = TRUE) %>% as_tibble() %>% 
+  gather(var, value, -x, -y)
+paleta <- paletteer_dynamic("cartography::orange.pal",20)
+
+nov04_mapa <- ggplot() +
+  geom_raster(data = nov04_mapa, mapping = aes(
+    x = x, y = y, fill = value)) +
+  scale_fill_gradientn(colours = paleta, na.value = "white") + 
+  geom_sf(data = st_as_sf(poligono_crotons), fill = NA) + 
+  geom_sf(data = st_as_sf(pts), color = "yellow") +
+  geom_sf_text(data = st_as_sf(pts), aes(label = ID), size = 3, family = "Arial Black", vjust = -0.1, hjust = 0.3) +
+  
+  
+  
+  ggtitle("NOVIEMBRE 04") +
+  labs(x = "Longitud (º)", y = "Latitud (º)", fill = bquote("Trips") ) +
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.y = element_text(colour = "black", size = 9),
+        axis.text.x = element_text(colour = "black", size = 9),
+        legend.title.align = 0.5, 
+        legend.position = "top",
+        strip.text.x  = element_text(size = 11),
+        axis.title.y = element_text(size = 11),
+        axis.title.x = element_text(size = 11))
+
+nov04_mapa
+
+#11_Noviembre
+nov11_mapa <- rasterToPoints(idw.p_11_nov, xy = TRUE) %>% as_tibble() %>% 
+  gather(var, value, -x, -y)
+paleta <- paletteer_dynamic("cartography::orange.pal",20)
+
+nov11_mapa <- ggplot() +
+  geom_raster(data = nov11_mapa, mapping = aes(
+    x = x, y = y, fill = value)) +
+  scale_fill_gradientn(colours = paleta, na.value = "white") + 
+  geom_sf(data = st_as_sf(poligono_crotons), fill = NA) + 
+  geom_sf(data = st_as_sf(pts), color = "yellow") +
+  geom_sf_text(data = st_as_sf(pts), aes(label = ID), size = 3, family = "Arial Black", vjust = -0.1, hjust = 0.3) +
+  
+  
+  
+  ggtitle("NOVIEMBRE 11") +
+  labs(x = "Longitud (º)", y = "Latitud (º)", fill = bquote("Trips") ) +
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.y = element_text(colour = "black", size = 9),
+        axis.text.x = element_text(colour = "black", size = 9),
+        legend.title.align = 0.5, 
+        legend.position = "top",
+        strip.text.x  = element_text(size = 11),
+        axis.title.y = element_text(size = 11),
+        axis.title.x = element_text(size = 11))
+
+nov11_mapa
+
+#18_Noviembre
+nov18_mapa <- rasterToPoints(idw.p_18_nov, xy = TRUE) %>% as_tibble() %>% 
+  gather(var, value, -x, -y)
+paleta <- paletteer_dynamic("cartography::orange.pal",20)
+
+nov18_mapa <- ggplot() +
+  geom_raster(data = nov18_mapa, mapping = aes(
+    x = x, y = y, fill = value)) +
+  scale_fill_gradientn(colours = paleta, na.value = "white") + 
+  geom_sf(data = st_as_sf(poligono_crotons), fill = NA) + 
+  geom_sf(data = st_as_sf(pts), color = "yellow") +
+  geom_sf_text(data = st_as_sf(pts), aes(label = ID), size = 3, family = "Arial Black", vjust = -0.1, hjust = 0.3) +
+  
+  
+  
+  ggtitle("NOVIEMBRE 18") +
+  labs(x = "Longitud (º)", y = "Latitud (º)", fill = bquote("Trips") ) +
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.y = element_text(colour = "black", size = 9),
+        axis.text.x = element_text(colour = "black", size = 9),
+        legend.title.align = 0.5, 
+        legend.position = "top",
+        strip.text.x  = element_text(size = 11),
+        axis.title.y = element_text(size = 11),
+        axis.title.x = element_text(size = 11))
+
+nov18_mapa
+#PRINT
+oct21_mapa
+oct28_mapa
+nov04_mapa
+nov11_mapa
+nov18_mapa
